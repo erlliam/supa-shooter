@@ -1,4 +1,11 @@
 import * as THREE from "three";
+import WebGL from "three/addons/capabilities/WebGL.js";
+
+if (!WebGL.isWebGL2Available()) {
+  const warning = WebGL.getWebGL2ErrorMessage();
+  document.body.append(warning);
+  throw warning.textContent;
+}
 
 const scene = new THREE.Scene();
 
@@ -22,6 +29,9 @@ camera.position.z = 5;
 document.body.append(renderer.domElement);
 
 function animate() {
+  cube.rotation.x += 0.0001;
+  cube.rotation.y += 0.0001;
   renderer.render(scene, camera);
 }
+
 renderer.setAnimationLoop(animate);
