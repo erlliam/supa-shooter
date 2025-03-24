@@ -25,5 +25,3 @@ function animate() {
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
-
-console.log("o1222126k");
