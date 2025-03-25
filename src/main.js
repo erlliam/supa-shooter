@@ -18,19 +18,18 @@ const camera = new THREE.PerspectiveCamera(
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-
-scene.add(cube);
-camera.position.z = 5;
-
 document.body.append(renderer.domElement);
 
+// code here
+const baseplateGeometry = new THREE.BoxGeometry(100, 5, 100);
+const baseplateMaterial = new THREE.MeshBasicMaterial({ color: 0xa9a9a9 });
+const baseplate = new THREE.Mesh(baseplateGeometry, baseplateMaterial);
+scene.add(baseplate);
+
+camera.position.set(0, 50, 100);
+camera.lookAt(0, 0, 0);
+
 function animate() {
-  cube.rotation.x += 0.0001;
-  cube.rotation.y += 0.0001;
   renderer.render(scene, camera);
 }
 
