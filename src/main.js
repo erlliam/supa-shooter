@@ -172,6 +172,8 @@ function loadSolider() {
 function animate() {
   const delta = clock.getDelta();
 
+  rotateCubes(delta);
+
   if (controls.isLocked) {
     // todo: calcualte distance travel/speed, I believe we need to do that velocity normalization stuff from the example
     // I saw another game where if you hold w/s and a a/d key you sort of move way faster
@@ -205,6 +207,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+const CUBES = [];
 const CUBE_GEOMETRY = new THREE.BoxGeometry(8, 8, 8);
 function createCube() {
   const cubeMaterial = new THREE.MeshBasicMaterial({
@@ -214,12 +217,19 @@ function createCube() {
   const randomX = Math.floor(Math.random() * 100) - 50;
   const randomY = Math.floor(Math.random() * 100) - 50;
   cube.position.set(randomX - 4, 4, randomY - 4);
+  CUBES.push(cube);
   scene.add(cube);
 }
 
 function generateRandomCubes() {
   for (let i = 0; i < 25; i++) {
     createCube();
+  }
+}
+
+function rotateCubes(delta) {
+  for (const cube of CUBES) {
+    cube.rotation.y += (Math.PI / 2) * delta;
   }
 }
 
