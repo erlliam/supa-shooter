@@ -12,7 +12,7 @@ const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
-  1000
+  100
 );
 const renderer = new THREE.WebGLRenderer();
 const controls = new PointerLockControls(camera, document.body);
@@ -145,9 +145,10 @@ function loadLights() {
 }
 
 function createBaseplate() {
-  const baseplateGeometry = new THREE.BoxGeometry(100, 5, 100);
+  const baseplateGeometry = new THREE.PlaneGeometry(100, 100);
   const baseplateMaterial = new THREE.MeshBasicMaterial({ color: 0xa9a9a9 });
   const baseplate = new THREE.Mesh(baseplateGeometry, baseplateMaterial);
+  baseplate.rotation.x = -Math.PI / 2;
   scene.add(baseplate);
 }
 
@@ -164,7 +165,6 @@ function loadSolider() {
         object.castShadow = true;
       }
     });
-    model.position.y = 3;
     scene.add(model);
   });
 }
@@ -205,11 +205,30 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+const CUBE_GEOMETRY = new THREE.BoxGeometry(8, 8, 8);
+function createCube() {
+  const cubeMaterial = new THREE.MeshBasicMaterial({
+    color: Math.random() * 0xffffff,
+  });
+  const cube = new THREE.Mesh(CUBE_GEOMETRY, cubeMaterial);
+  const randomX = Math.floor(Math.random() * 100) - 50;
+  const randomY = Math.floor(Math.random() * 100) - 50;
+  cube.position.set(randomX - 4, 4, randomY - 4);
+  scene.add(cube);
+}
+
+function generateRandomCubes() {
+  for (let i = 0; i < 25; i++) {
+    createCube();
+  }
+}
+
 function main() {
   initializeScene();
   initializeRenderer();
   initializeControls();
   createBaseplate();
+  generateRandomCubes();
   loadLights();
   loadSolider();
   defaultCameraPosition();
