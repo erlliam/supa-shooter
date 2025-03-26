@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import WebGL from "three/addons/capabilities/WebGL.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import soliderUrl from "./models/Soldier.glb";
 
 checkWebGlSupport();
 
@@ -14,6 +16,7 @@ const camera = new THREE.PerspectiveCamera(
 );
 const renderer = new THREE.WebGLRenderer();
 const controls = new PointerLockControls(camera, document.body);
+const loader = new GLTFLoader();
 
 let moveForward = false;
 let moveBackward = false;
@@ -28,6 +31,8 @@ function initializeScene() {
 
 function initializeRenderer() {
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.shadowMap.enabled = true;
   document.body.append(renderer.domElement);
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -122,6 +127,23 @@ function checkWebGlSupport() {
   }
 }
 
+function loadLights() {
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight.position.set(-60, 100, -10);
+  dirLight.castShadow = true;
+  dirLight.shadow.camera.top = 50;
+  dirLight.shadow.camera.bottom = -50;
+  dirLight.shadow.camera.left = -50;
+  dirLight.shadow.camera.right = 50;
+  dirLight.shadow.camera.near = 0.1;
+  dirLight.shadow.camera.far = 200;
+  dirLight.shadow.mapSize.width = 4096;
+  dirLight.shadow.mapSize.height = 4096;
+  scene.add(dirLight);
+}
+
 function createBaseplate() {
   const baseplateGeometry = new THREE.BoxGeometry(100, 5, 100);
   const baseplateMaterial = new THREE.MeshBasicMaterial({ color: 0xa9a9a9 });
@@ -130,8 +152,21 @@ function createBaseplate() {
 }
 
 function defaultCameraPosition() {
-  camera.position.set(0, 50, 100);
+  camera.position.set(0, 10, 10);
   camera.lookAt(0, 0, 0);
+}
+
+function loadSolider() {
+  loader.load(soliderUrl, (gltf) => {
+    const model = gltf.scene;
+    model.traverse((object) => {
+      if (object.isMesh) {
+        object.castShadow = true;
+      }
+    });
+    model.position.y = 3;
+    scene.add(model);
+  });
 }
 
 function animate() {
@@ -175,6 +210,8 @@ function main() {
   initializeRenderer();
   initializeControls();
   createBaseplate();
+  loadLights();
+  loadSolider();
   defaultCameraPosition();
   renderer.setAnimationLoop(animate);
 }
