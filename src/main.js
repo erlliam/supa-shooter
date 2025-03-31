@@ -3,6 +3,7 @@ import WebGL from "three/addons/capabilities/WebGL.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import soliderUrl from "./models/Soldier.glb";
+import RAPIER from "@dimforge/rapier3d-compat";
 
 checkWebGlSupport();
 
@@ -12,11 +13,15 @@ const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
-  100
+  250
 );
 const renderer = new THREE.WebGLRenderer();
 const controls = new PointerLockControls(camera, document.body);
 const loader = new GLTFLoader();
+
+await RAPIER.init();
+const worldGravity = { x: 0.0, y: -9.81, z: 0.0 };
+const world = new RAPIER.World(worldGravity);
 
 let moveForward = false;
 let moveBackward = false;
@@ -149,11 +154,27 @@ function createBaseplate() {
   const baseplateMaterial = new THREE.MeshBasicMaterial({ color: 0xa9a9a9 });
   const baseplate = new THREE.Mesh(baseplateGeometry, baseplateMaterial);
   baseplate.rotation.x = -Math.PI / 2;
+  const baseplateColliderDesc = RAPIER.ColliderDesc.cuboid(50, 0, 50);
+  const collider = world.createCollider(baseplateColliderDesc);
   scene.add(baseplate);
 }
 
+function createHelpers() {
+  const aGeometry = new THREE.BoxGeometry(0.1, 0, 0.1);
+  const aMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const a = new THREE.Mesh(aGeometry, aMaterial);
+
+  const bGeometry = new THREE.BoxGeometry(0.1, 0, 0.1);
+  const bMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const b = new THREE.Mesh(aGeometry, aMaterial);
+  b.position.copy({ x: 50, y: 0, z: 50 });
+
+  scene.add(a);
+  scene.add(b);
+}
+
 function defaultCameraPosition() {
-  camera.position.set(0, 10, 10);
+  camera.position.set(0, 50, 75);
   camera.lookAt(0, 0, 0);
 }
 
@@ -172,7 +193,12 @@ function loadSolider() {
 function animate() {
   const delta = clock.getDelta();
 
-  rotateCubes(delta);
+  world.step();
+
+  for (const cube of CUBES) {
+    cube.mesh.position.copy(cube.collider.translation());
+    cube.mesh.quaternion.copy(cube.collider.rotation());
+  }
 
   if (controls.isLocked) {
     // todo: calcualte distance travel/speed, I believe we need to do that velocity normalization stuff from the example
@@ -209,15 +235,24 @@ function animate() {
 
 const CUBES = [];
 const CUBE_GEOMETRY = new THREE.BoxGeometry(8, 8, 8);
-function createCube() {
+function createCube(x, y = 50, z) {
   const cubeMaterial = new THREE.MeshBasicMaterial({
     color: Math.random() * 0xffffff,
   });
   const cube = new THREE.Mesh(CUBE_GEOMETRY, cubeMaterial);
-  const randomX = Math.floor(Math.random() * 100) - 50;
-  const randomY = Math.floor(Math.random() * 100) - 50;
-  cube.position.set(randomX - 4, 4, randomY - 4);
-  CUBES.push(cube);
+  const randomX = x ?? Math.floor(Math.random() * 100) - 50;
+  const randomZ = z ?? Math.floor(Math.random() * 100) - 50;
+  cube.position.set(randomX - 4, y, randomZ - 4);
+
+  const cubeRigidBodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(
+    ...cube.position.toArray()
+  );
+  const cubeColliderDesc = RAPIER.ColliderDesc.cuboid(4, 4, 4);
+
+  const cubeRigidBody = world.createRigidBody(cubeRigidBodyDesc);
+  const cubeCollider = world.createCollider(cubeColliderDesc, cubeRigidBody);
+
+  CUBES.push({ rigidBody: cubeRigidBody, collider: cubeCollider, mesh: cube });
   scene.add(cube);
 }
 
@@ -229,7 +264,7 @@ function generateRandomCubes() {
 
 function rotateCubes(delta) {
   for (const cube of CUBES) {
-    cube.rotation.y += (Math.PI / 2) * delta;
+    cube.mesh.rotation.y += (Math.PI / 2) * delta;
   }
 }
 
@@ -237,11 +272,17 @@ function main() {
   initializeScene();
   initializeRenderer();
   initializeControls();
+
+  defaultCameraPosition();
+  loadLights();
+
+  // loadSolider();
+
   createBaseplate();
   generateRandomCubes();
-  loadLights();
-  loadSolider();
-  defaultCameraPosition();
+
+  createHelpers();
+
   renderer.setAnimationLoop(animate);
 }
 
