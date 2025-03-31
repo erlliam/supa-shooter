@@ -135,9 +135,6 @@ function initializeControls() {
       }
 
       cube.rigidBody.applyImpulse({ x: 0, y: 5000, z: 0 }, true);
-
-      console.log(cube);
-      console.log("hit");
     }
   });
 }
