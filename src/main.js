@@ -123,6 +123,23 @@ function initializeControls() {
         moveUp = false;
     }
   });
+
+  document.addEventListener("mousedown", () => {
+    if (!lookingAt) {
+      return;
+    }
+
+    for (const cube of CUBES) {
+      if (cube.mesh !== lookingAt.object) {
+        continue;
+      }
+
+      cube.rigidBody.applyImpulse({ x: 0, y: 5000, z: 0 }, true);
+
+      console.log(cube);
+      console.log("hit");
+    }
+  });
 }
 
 function checkWebGlSupport() {
@@ -178,6 +195,10 @@ function loadSolider() {
   });
 }
 
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2(0, 0); // -1 to 1 for x and y. 0, 0 is center of screen
+let lookingAt;
+
 function animate() {
   const delta = clock.getDelta();
 
@@ -186,6 +207,20 @@ function animate() {
   for (const cube of CUBES) {
     cube.mesh.position.copy(cube.collider.translation());
     cube.mesh.quaternion.copy(cube.collider.rotation());
+  }
+
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObjects(scene.children);
+  lookingAt = intersects[0];
+
+  if (lookingAt) {
+    const color = lookingAt.object.material.color.clone();
+    if (color.r !== 1) {
+      lookingAt.object.material.color.set(0xff0000);
+      setTimeout(() => {
+        lookingAt.object.material.color.set(color);
+      });
+    }
   }
 
   if (controls.isLocked) {
