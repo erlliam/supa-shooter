@@ -47,7 +47,7 @@ function initializeRenderer() {
 }
 
 function initializeControls() {
-  // wtf is happening, very weird behavior with div created dynamically.
+  const crosshairDiv = document.getElementById("crosshair");
   const controlsToggleDiv = document.createElement("div");
   controlsToggleDiv.style.position = "fixed";
   controlsToggleDiv.style.inset = "0";
@@ -64,8 +64,10 @@ function initializeControls() {
   });
   controls.addEventListener("lock", function () {
     controlsToggleDiv.style.setProperty("display", "none");
+    crosshairDiv.style.setProperty("display", "unset");
   });
   controls.addEventListener("unlock", function () {
+    crosshairDiv.style.setProperty("display", "none");
     controlsToggleDiv.style.setProperty("display", "flex");
   });
   scene.add(controls.object);
@@ -155,22 +157,8 @@ function createBaseplate() {
   const baseplate = new THREE.Mesh(baseplateGeometry, baseplateMaterial);
   baseplate.rotation.x = -Math.PI / 2;
   const baseplateColliderDesc = RAPIER.ColliderDesc.cuboid(50, 0, 50);
-  const collider = world.createCollider(baseplateColliderDesc);
+  const baseplateCollider = world.createCollider(baseplateColliderDesc);
   scene.add(baseplate);
-}
-
-function createHelpers() {
-  const aGeometry = new THREE.BoxGeometry(0.1, 0, 0.1);
-  const aMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-  const a = new THREE.Mesh(aGeometry, aMaterial);
-
-  const bGeometry = new THREE.BoxGeometry(0.1, 0, 0.1);
-  const bMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-  const b = new THREE.Mesh(aGeometry, aMaterial);
-  b.position.copy({ x: 50, y: 0, z: 50 });
-
-  scene.add(a);
-  scene.add(b);
 }
 
 function defaultCameraPosition() {
@@ -262,12 +250,6 @@ function generateRandomCubes() {
   }
 }
 
-function rotateCubes(delta) {
-  for (const cube of CUBES) {
-    cube.mesh.rotation.y += (Math.PI / 2) * delta;
-  }
-}
-
 function main() {
   initializeScene();
   initializeRenderer();
@@ -280,8 +262,6 @@ function main() {
 
   createBaseplate();
   generateRandomCubes();
-
-  createHelpers();
 
   renderer.setAnimationLoop(animate);
 }
