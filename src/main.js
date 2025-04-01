@@ -196,6 +196,17 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2(0, 0); // -1 to 1 for x and y. 0, 0 is center of screen
 let lookingAt;
 
+const offset = 0.01;
+const characterRigidBody = world.createRigidBody(
+  RAPIER.RigidBodyDesc.kinematicVelocityBased()
+);
+const characterCollider = world.createCollider(
+  RAPIER.ColliderDesc.capsule(2, 1).setTranslation(0, 5, 0),
+  characterRigidBody
+);
+const characterController = world.createCharacterController(offset);
+characterController.setApplyImpulsesToDynamicBodies(true);
+
 function animate() {
   const delta = clock.getDelta();
 
@@ -220,34 +231,73 @@ function animate() {
     }
   }
 
+  const cameraRotation = camera.rotation.clone();
+  let forward = new THREE.Vector3(0, 0, -1).applyEuler(cameraRotation); // Move forward/backward in camera's z-axis
+  forward.y = 0;
+  let right = new THREE.Vector3(1, 0, 0).applyEuler(cameraRotation); // Move left/right in camera's x-axis
+
+  const velocity = new THREE.Vector3();
+
   if (controls.isLocked) {
     // todo: calcualte distance travel/speed, I believe we need to do that velocity normalization stuff from the example
     // I saw another game where if you hold w/s and a a/d key you sort of move way faster
     // I believe this was the reason
-
+    const desiredTranslation = new RAPIER.Vector3(0, 0, 0);
     if (moveRight) {
-      controls.moveRight(32 * delta);
+      velocity.add(right);
+      // desiredTranslation.x += delta * 16;
     }
 
     if (moveLeft) {
-      controls.moveRight(-32 * delta);
+      velocity.add(right.negate());
+      // desiredTranslation.x -= delta * 16;
     }
 
     if (moveForward) {
-      controls.moveForward(32 * delta);
+      velocity.add(forward);
+      // desiredTranslation.z += delta * 16;
     }
 
     if (moveBackward) {
-      controls.moveForward(-32 * delta);
+      velocity.add(forward.negate());
+      // desiredTranslation.z -= delta * 16;
     }
 
     if (moveUp) {
-      controls.object.position.y += 32 * delta;
+      desiredTranslation.y += delta * 16;
     }
 
     if (moveDown) {
-      controls.object.position.y -= 32 * delta;
+      desiredTranslation.y -= delta * 16;
     }
+
+    velocity.normalize().multiplyScalar(delta * 16);
+    desiredTranslation.x = velocity.x;
+    desiredTranslation.z = velocity.z;
+
+    const currentPosition = characterCollider.translation();
+
+    characterController.computeColliderMovement(
+      characterCollider,
+      desiredTranslation
+    );
+    const computedMovement = characterController.computedMovement();
+    console.log(computedMovement);
+    characterRigidBody.setLinvel({
+      x: computedMovement.x * 16,
+      y: computedMovement.y * 16,
+      z: computedMovement.z * 16,
+    });
+  }
+
+  const currentPosition = characterCollider.translation();
+  camera.position.set(currentPosition.x, currentPosition.y, currentPosition.z);
+
+  for (let i = 0; i < characterController.numComputedCollisions(); i++) {
+    console.log("hi");
+    let collision = characterController.computedCollision(i);
+    console.log(collision);
+    // Do something with that collision information.
   }
 
   renderer.render(scene, camera);
