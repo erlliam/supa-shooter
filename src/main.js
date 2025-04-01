@@ -201,7 +201,7 @@ const characterRigidBody = world.createRigidBody(
   RAPIER.RigidBodyDesc.kinematicPositionBased()
 );
 const characterCollider = world.createCollider(
-  RAPIER.ColliderDesc.capsule(2, 1).setTranslation(0, 5, 0),
+  RAPIER.ColliderDesc.capsule(2, 1).setTranslation(0, 25, 0),
   characterRigidBody
 );
 const characterController = world.createCharacterController(offset);
@@ -233,6 +233,8 @@ function animate() {
   let forward = new THREE.Vector3(0, 0, -1).applyEuler(cameraRotation); // Move forward/backward in camera's z-axis
   forward.y = 0;
   let right = new THREE.Vector3(1, 0, 0).applyEuler(cameraRotation); // Move left/right in camera's x-axis
+  right.y = 0;
+  const grounded = characterController.computedGrounded();
 
   const velocity = new THREE.Vector3();
 
@@ -255,7 +257,9 @@ function animate() {
     }
 
     if (moveUp) {
-      velocity.y += 1;
+      if (grounded) {
+        velocity.y += 1;
+      }
     }
 
     if (moveDown) {
@@ -263,8 +267,14 @@ function animate() {
     }
 
     velocity.normalize();
+
     desiredTranslation.x = velocity.x * 16 * delta;
-    desiredTranslation.y = velocity.y * 16 * delta;
+    if (velocity.y === 0) {
+      desiredTranslation.y = -9.81 * 5 * delta;
+    } else if (velocity.y > 0) {
+      desiredTranslation.y = 128 * delta;
+    }
+    // desiredTranslation.y = velocity.y * 16 * delta;
     desiredTranslation.z = velocity.z * 16 * delta;
 
     characterController.computeColliderMovement(
@@ -273,6 +283,7 @@ function animate() {
     );
     const computedMovement = characterController.computedMovement();
     const currentPosition = characterRigidBody.translation();
+
     characterRigidBody.setNextKinematicTranslation(
       new RAPIER.Vector3(
         currentPosition.x + computedMovement.x,
