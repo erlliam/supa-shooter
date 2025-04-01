@@ -263,9 +263,9 @@ function animate() {
     }
 
     velocity.normalize();
-    desiredTranslation.x = velocity.x;
-    desiredTranslation.y = velocity.y;
-    desiredTranslation.z = velocity.z;
+    desiredTranslation.x = velocity.x * 16 * delta;
+    desiredTranslation.y = velocity.y * 16 * delta;
+    desiredTranslation.z = velocity.z * 16 * delta;
 
     characterController.computeColliderMovement(
       characterCollider,
@@ -275,9 +275,9 @@ function animate() {
     const currentPosition = characterRigidBody.translation();
     characterRigidBody.setNextKinematicTranslation(
       new RAPIER.Vector3(
-        currentPosition.x + computedMovement.x * 16 * delta,
-        currentPosition.y + computedMovement.y * 16 * delta,
-        currentPosition.z + computedMovement.z * 16 * delta
+        currentPosition.x + computedMovement.x,
+        currentPosition.y + computedMovement.y,
+        currentPosition.z + computedMovement.z
       )
     );
   }
