@@ -143,7 +143,6 @@ function checkWebGlSupport() {
   if (!WebGL.isWebGL2Available()) {
     const warning = WebGL.getWebGL2ErrorMessage();
     document.body.append(warning);
-    console.log("wtf");
     throw warning.textContent;
   }
 }
@@ -210,9 +209,20 @@ characterController.setApplyImpulsesToDynamicBodies(true);
 let jumping = false;
 let jumpStart;
 let jumpEnd;
+let canJump = true;
 
 function animate() {
   const delta = clock.getDelta();
+
+  // really should add a collider with rapier js that's event based and remove the stuff when it touches or add the player
+  for (const child of scene.children) {
+    if (child.isMesh) {
+      if (child.position.y < -25) {
+        child.geometry.dispose();
+        scene.remove(child);
+      }
+    }
+  }
 
   for (const cube of CUBES) {
     cube.mesh.position.copy(cube.collider.translation());
@@ -260,7 +270,8 @@ function animate() {
       velocity.add(forward.negate());
     }
 
-    if (moveUp && grounded && !jumping) {
+    if (moveUp && grounded && canJump) {
+      canJump = false;
       jumping = true;
       jumpStart = performance.now();
       jumpEnd = jumpStart + 350;
@@ -273,12 +284,14 @@ function animate() {
 
     if (performance.now() >= jumpEnd && jumping) {
       jumping = false;
+      setTimeout(() => {
+        canJump = true;
+      }, 200);
     }
 
     if (jumping) {
       let progress = (performance.now() - jumpStart) / 350; // jump takes 300ms, normalize progress 0 - 1
       let scaledForce = 50 * (1 - progress);
-      console.log(scaledForce);
       desiredTranslation.y = scaledForce * delta; // apply this over like 300 ms
     } else {
       desiredTranslation.y = -9.81 * 5 * delta;
@@ -303,7 +316,14 @@ function animate() {
     );
   }
 
-  const currentPosition = characterCollider.translation();
+  let currentPosition = characterCollider.translation();
+  if (currentPosition.y < -25) {
+    characterRigidBody.setNextKinematicTranslation(
+      new RAPIER.Vector3(0, 25, 0)
+    );
+    currentPosition = characterCollider.translation();
+  }
+
   camera.position.set(currentPosition.x, currentPosition.y, currentPosition.z);
 
   world.step();
