@@ -207,6 +207,10 @@ const characterCollider = world.createCollider(
 const characterController = world.createCharacterController(offset);
 characterController.setApplyImpulsesToDynamicBodies(true);
 
+let jumping = false;
+let jumpStart;
+let jumpEnd;
+
 function animate() {
   const delta = clock.getDelta();
 
@@ -256,25 +260,31 @@ function animate() {
       velocity.add(forward.negate());
     }
 
-    if (moveUp) {
-      if (grounded) {
-        velocity.y += 1;
-      }
+    if (moveUp && grounded && !jumping) {
+      jumping = true;
+      jumpStart = performance.now();
+      jumpEnd = jumpStart + 350;
     }
-
-    if (moveDown) {
-      velocity.y -= 1;
-    }
+    // if (moveDown) {
+    //   velocity.y -= 1;
+    // }
 
     velocity.normalize();
 
-    desiredTranslation.x = velocity.x * 16 * delta;
-    if (velocity.y === 0) {
-      desiredTranslation.y = -9.81 * 5 * delta;
-    } else if (velocity.y > 0) {
-      desiredTranslation.y = 128 * delta;
+    if (performance.now() >= jumpEnd && jumping) {
+      jumping = false;
     }
-    // desiredTranslation.y = velocity.y * 16 * delta;
+
+    if (jumping) {
+      let progress = (performance.now() - jumpStart) / 350; // jump takes 300ms, normalize progress 0 - 1
+      let scaledForce = 50 * (1 - progress);
+      console.log(scaledForce);
+      desiredTranslation.y = scaledForce * delta; // apply this over like 300 ms
+    } else {
+      desiredTranslation.y = -9.81 * 5 * delta;
+    }
+
+    desiredTranslation.x = velocity.x * 16 * delta;
     desiredTranslation.z = velocity.z * 16 * delta;
 
     characterController.computeColliderMovement(
