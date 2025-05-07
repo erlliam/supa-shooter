@@ -333,7 +333,7 @@ function animate() {
 
 const CUBES = [];
 const CUBE_GEOMETRY = new THREE.BoxGeometry(8, 8, 8);
-function createCube(x, y = 50, z) {
+function createCube(x, y = 10, z) {
   const cubeMaterial = new THREE.MeshBasicMaterial({
     color: Math.random() * 0xffffff,
   });
